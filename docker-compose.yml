@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  smart-logger:
+    build: .
+    container_name: smart-logger
+    restart: always
+    ports:
+      - "127.0.0.1:5000:80"  # Binds to localhost only (secure)
+    volumes:
+      - ./data:/data  # Persists database
+    environment:
+      - ADMIN_PASSWORD=ChangeThisPassword123!
+      - SECRET_KEY=kjsdhf7823h42387423_random_string
+      - WEBHOOK_URL=YOUR_DISCORD_WEBHOOK_URL_HERE
+      - FALLBACK_URL=https://google.com
