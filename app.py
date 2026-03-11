@@ -67,7 +67,7 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-def send_alert(ip, user_agent, path, action_type, detail, color=None):
+def send_alert(ip, user_agent, path, full_url, action_type, detail, color=None):
     if color is None: color = 65280 if action_type == "Redirect" else 16776960
     data = {
         "username": "Admin Logger",
@@ -75,7 +75,7 @@ def send_alert(ip, user_agent, path, action_type, detail, color=None):
             "title": "🎯 Trap Triggered",
             "color": color,
             "fields": [
-                {"name": "Path", "value": f"`/{path}`", "inline": False},
+                {"name": "URL", "value": f"`{full_url}`", "inline": False},
                 {"name": "Action", "value": f"**{action_type}**", "inline": True},
                 {"name": "Detail", "value": f"`{detail}`", "inline": True},
                 {"name": "IP", "value": f"`{ip}`", "inline": False},
@@ -173,21 +173,22 @@ def catch_all(path):
     if request.headers.getlist("X-Forwarded-For"): ip = request.headers.getlist("X-Forwarded-For")[0]
     else: ip = request.remote_addr
     user_agent = request.headers.get('User-Agent')
+    full_url = request.url
 
     if route['type'] == 'redirect':
         if route['is_smart'] == 1:
-            send_alert(ip, user_agent, path, "Smart Log (JS)", route['content'])
+            send_alert(ip, user_agent, path, full_url, "Smart Log (JS)", route['content'])
             return render_template_string(SMART_LOADER_TEMPLATE, title=route['page_title'], destination=route['content'])
         else:
-            send_alert(ip, user_agent, path, "Redirect", route['content'])
+            send_alert(ip, user_agent, path, full_url, "Redirect", route['content'])
             return redirect(route['content'])
 
     elif route['type'] == 'html':
         if route['is_smart'] == 1:
-            send_alert(ip, user_agent, path, "Served HTML (Smart)", "Custom Content")
+            send_alert(ip, user_agent, path, full_url, "Served HTML (Smart)", "Custom Content")
             return route['content'] + SMART_INJECT_CODE
         else:
-            send_alert(ip, user_agent, path, "Served HTML", "Custom Content")
+            send_alert(ip, user_agent, path, full_url, "Served HTML", "Custom Content")
             return route['content']
 
     return abort(404)
